@@ -1,4 +1,4 @@
-"use strict";
+import * as Serial from './serial.js';
 
 var currentConnectionId;
 var consoleArea;
@@ -12,7 +12,7 @@ window.addEventListener("load", () => {
     connectBtn = document.getElementById("connect");
 
     // Detect available ports
-    chrome.serial.getDevices(ports => {
+    Serial.get_device().then(ports => {
 	for (let i=0; i<ports.length; i++) {
 	    const option = document.createElement("option");
 	    option.text = ports[i].path;
