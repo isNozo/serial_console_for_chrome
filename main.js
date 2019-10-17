@@ -27,23 +27,33 @@ window.addEventListener("load", () => {
 	chrome.serial.connect(path, {}, connectionInfo => {
 	    console.log("Connected:", connectionInfo);
 	    currentConnectionId = connectionInfo.connectionId;
+
+	    recv_msg(currentConnectionId);
+	    send_msg(currentConnectionId);
 	});
     });
 });
 
-// Recieve message
-chrome.serial.onReceive.addListener(info => {
-    if (info.connectionId == currentConnectionId && info.data) {
-	const str = String.fromCharCode.apply(null, new Uint8Array(info.data));
-	consoleArea.innerHTML += str.replace(/\r/, '');
-	consoleArea.scrollTop = consoleArea.scrollHeight;
-    }
-});
+const get_key = () => {
+    return new Promise(resolve => {
+	document.addEventListener('keypress', e => {
+	    resolve(e.charCode);
+	}, {once:true});
+    });
+}
 
-// Send message
-document.addEventListener('keypress', e => {
-    if(!currentConnectionId) return;
+const send_msg = async (id) => {
+    const code = await get_key();
+    Serial.send_byte(id, code);
+    send_msg(id);
+};
 
-    const buf = new Uint8Array([e.charCode]);
-    chrome.serial.send(currentConnectionId, buf, _ => {});
-});
+const recv_msg = async (id) => {
+    console.log('rec');
+    const data = await Serial.recv_byte(id);
+    const buf = new Uint8Array(data);
+    const str = String.fromCharCode.apply(null, buf);
+    consoleArea.innerHTML += str.replace(/\r/, '');
+    consoleArea.scrollTop = consoleArea.scrollHeight;
+    recv_msg(id);
+}
